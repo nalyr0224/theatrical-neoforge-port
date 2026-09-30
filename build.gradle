@@ -1,0 +1,95 @@
+plugins {
+    id "architectury-plugin" version "3.4-SNAPSHOT"
+    id "dev.architectury.loom" version "1.7-SNAPSHOT" apply false
+    id "io.github.juuxel.loom-quiltflower" version "1.10.0" apply false
+    id "me.modmuss50.mod-publish-plugin" version "0.5.1" apply false
+}
+
+architectury {
+    minecraft = rootProject.minecraft_version
+}
+
+subprojects {
+    apply plugin: "dev.architectury.loom"
+    apply plugin: "io.github.juuxel.loom-quiltflower"
+
+    loom {
+        silentMojangMappingsLicense()
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+
+
+
+        // Dynamic Mojang + Parchment 1.21.1 Mappings
+        mappings loom.layered() {
+            officialMojangMappings()
+            parchment("org.parchmentmc.data:parchment-${rootProject.parchment_minecraft_version}:${rootProject.parchment_version}@zip")
+        }
+    }
+}
+
+allprojects {
+    apply plugin: "java"
+    apply plugin: "architectury-plugin"
+    apply plugin: "maven-publish"
+    apply plugin: "me.modmuss50.mod-publish-plugin"
+
+    // Modern Gradle base name syntax
+    base {
+        archivesName = rootProject.archives_base_name
+    }
+
+    version = "${rootProject.mod_version}.${System.getenv("GITHUB_RUN_NUMBER") ?: 9999}+mc${rootProject.minecraft_version}"
+    group = rootProject.maven_group
+
+    repositories {
+        maven { url "https://libraries.minecraft.net/" } // <-- MUST BE FIRST
+
+        maven {
+            name = 'ParchmentMC'
+            url = 'https://maven.parchmentmc.org'
+        }
+        maven {
+            name = 'NeoForge'
+            url = 'https://maven.neoforged.net/releases'
+        }
+        maven {
+            name = 'Rushmead'
+            url = 'https://mvn.imabad.dev/repository/maven-releases/'
+        }
+        maven {
+            name = "Modrinth"
+            url = "https://api.modrinth.com/maven"
+        }
+
+        mavenCentral()
+        mavenLocal()
+
+        maven {
+            url "https://cursemaven.com"
+            content {
+                includeGroup "curse.maven"
+            }
+        }
+
+        maven { url "https://maven.architectury.dev/" }
+        maven { url "https://jitpack.io/" }
+
+        maven {
+            name = 'BlameJared'
+            url = 'https://maven.blamejared.com'
+        }
+    }
+
+    // Java 21 compilation configuration for MC 1.21.1
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+        options.release = 21
+    }
+
+    java {
+        withSourcesJar()
+    }
+}

@@ -1,0 +1,66 @@
+package dev.imabad.theatrical.items;
+
+import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.RegistrySupplier;
+import dev.imabad.theatrical.Theatrical;
+import dev.imabad.theatrical.TheatricalRegistry;
+import dev.imabad.theatrical.blocks.Blocks;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+
+public class Items {
+    public static final DeferredRegister<Item> ITEMS = TheatricalRegistry.get(Registries.ITEM);
+
+    // Blocks
+    public static final RegistrySupplier<Item> MOVING_LIGHT = ITEMS.register(
+        "moving_light",
+        () -> new BlockItem(Blocks.MOVING_LIGHT_BLOCK.get(), new Item.Properties().arch$tab(Theatrical.TAB))
+    );
+    public static final RegistrySupplier<Item> PIPE = ITEMS.register(
+        "pipe",
+        () -> new BlockItem(Blocks.PIPE_BLOCK.get(), new Item.Properties().arch$tab(Theatrical.TAB))
+    );
+    public static final RegistrySupplier<Item> ART_NET_INTERFACE = ITEMS.register(
+        "artnet_interface",
+        () -> new BlockItem(Blocks.ART_NET_INTERFACE.get(), new Item.Properties())
+    );
+    public static final RegistrySupplier<Item> LED_FRESNEL = ITEMS.register(
+            "led_fresnel",
+            () -> new BlockItem(Blocks.LED_FRESNEL.get(), new Item.Properties().arch$tab(Theatrical.TAB))
+    );
+    public static final RegistrySupplier<Item> TRUSS = ITEMS.register(
+            "truss",
+            () -> new BlockItem(Blocks.TRUSS_BLOCK.get(), new Item.Properties().arch$tab(Theatrical.TAB))
+    );
+    public static final RegistrySupplier<Item> REDSTONE_INTERFACE = ITEMS.register(
+            "redstone_interface",
+            () -> new BlockItem(Blocks.REDSTONE_INTERFACE.get(), new Item.Properties().arch$tab(Theatrical.TAB))
+    );
+    public static final RegistrySupplier<Item> TANK_TRAP = ITEMS.register(
+            "tank_trap",
+            () -> new BlockItem(Blocks.TANK_TRAP.get(), new Item.Properties().arch$tab(Theatrical.TAB))
+    );
+    public static final RegistrySupplier<Item> LED_PANEL = ITEMS.register(
+            "led_panel",
+            () -> new BlockItem(Blocks.LED_PANEL.get(), new Item.Properties().arch$tab(Theatrical.TAB))
+    );
+    public static final RegistrySupplier<Item> BASIC_LIGHTING_DESK = ITEMS.register(
+            "basic_lighting_desk",
+            () -> new BlockItem(Blocks.BASIC_LIGHTING_DESK.get(), new Item.Properties().arch$tab(Theatrical.TAB))
+    );
+    public static final RegistrySupplier<Item> MOVING_WASH = ITEMS.register(
+        "moving_wash",
+        () -> new BlockItem(Blocks.MOVING_WASH_BLOCK.get(), new Item.Properties().arch$tab(Theatrical.TAB))
+    );
+
+    // Items
+    public static final RegistrySupplier<Item> CONFIGURATION_CARD = ITEMS.register(
+            "configuration_card",
+            ConfigurationCard::new
+    );
+    public static final RegistrySupplier<Item> FIXTURE_FOCUSER = ITEMS.register(
+            "fixture_focuser",
+            FixtureFocuser::new
+    );
+}

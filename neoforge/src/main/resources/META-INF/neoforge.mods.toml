@@ -1,0 +1,36 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "Apache-2.0"
+
+[[mods]]
+modId = "theatrical"
+version = "1.0.0"
+displayName = "Theatrical"
+authors = "Rushmead,bright_spark"
+description = '''
+Theatrical, bringing the theatre to Minecraft.
+'''
+
+[[mixins]]
+config = "theatrical-common.mixins.json"
+
+[[dependencies.theatrical]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1.0,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.theatrical]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,1.22)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.theatrical]]
+modId = "architectury"
+type = "required"
+versionRange = "[13.0.0,)"
+ordering = "AFTER"
+side = "BOTH"

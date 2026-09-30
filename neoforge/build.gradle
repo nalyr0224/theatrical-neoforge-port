@@ -1,0 +1,180 @@
+buildscript {
+    repositories {
+        maven {
+            name = "Architectury"
+            url = "https://maven.architectury.dev/"
+        }
+        maven {
+            name = "Fabric"
+            url = "https://maven.fabricmc.net/"
+        }
+        maven {
+            name = "NeoForge"
+            url = "https://maven.neoforged.net/releases"
+        }
+
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id "com.github.johnrengelman.shadow" version "8.1.1"
+}
+
+repositories {
+    maven { url "https://maven.neoforged.net/releases/" }
+    maven { url "https://libraries.minecraft.net/" }
+    mavenCentral()
+}
+
+architectury {
+    platformSetupLoomIde()
+    neoForge()
+}
+
+loom {
+    accessWidenerPath = project(":common").loom.accessWidenerPath
+
+    runs {
+        client {
+            client()
+        }
+        data {
+            data()
+            programArgs "--all", "--mod", "theatrical"
+            programArgs '--output', project(':common').file('src/generated/resources').absolutePath
+            programArgs '--existing', file('src/main/resources').absolutePath
+            programArgs '--existing', project(':common').file('src/main/resources').absolutePath
+            programArgs '--existing-mod', 'theatrical'
+        }
+    }
+}
+
+configurations {
+    common
+    shadowCommon
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentNeoForge.extendsFrom common
+}
+
+dependencies {
+    neoForge "net.neoforged:neoforge:${rootProject.neoforge_version}"
+    modApi "dev.architectury:architectury-neoforge:${rootProject.architectury_version}"
+
+    modLocalRuntime "foundry.veil:veil-neoforge-1.21.1:3.6.1"
+
+    common(project(path: ":common", configuration: "namedElements")) { transitive false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionNeoForge")) { transitive = false }
+
+    // ArtNet Library
+    implementation "ch.bildspur:artnet4j:${rootProject.artnet4j_version}"
+    include "ch.bildspur:artnet4j:${rootProject.artnet4j_version}"
+
+    implementation 'com.sun.activation:javax.activation:1.2.0'
+    include 'com.sun.activation:javax.activation:1.2.0'
+
+    // YAML
+    implementation "org.yaml:snakeyaml:${rootProject.snakeyaml_version}"
+    include "org.yaml:snakeyaml:${rootProject.snakeyaml_version}"
+
+    // ImGui (for Veil)
+    runtimeOnly 'io.github.spair:imgui-java-binding:1.88.0'
+    runtimeOnly 'io.github.spair:imgui-java-lwjgl3:1.88.0'
+    runtimeOnly 'io.github.spair:imgui-java-natives-macos:1.88.0'
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("META-INF/neoforge.mods.toml") {
+        expand "version": project.version
+    }
+}
+
+shadowJar {
+    exclude "fabric.mod.json"
+    exclude "architectury.common.json"
+
+    configurations = [project.configurations.shadowCommon]
+    archiveClassifier = "dev-shadow"
+}
+
+remapJar {
+    input = shadowJar.archiveFile
+    dependsOn shadowJar
+    archiveBaseName = "${rootProject.archives_base_name}-${project.name}"
+    archiveClassifier = null
+}
+
+jar {
+    archiveClassifier = "dev"
+}
+
+sourcesJar {
+    def commonSources = project(":common").sourcesJar
+    dependsOn commonSources
+    from commonSources.archiveFile.map { zipTree(it) }
+}
+
+components.java {
+    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
+        skip()
+    }
+}
+
+publishing {
+    publications {
+        mavenForge(MavenPublication) {
+            artifactId = rootProject.archives_base_name + "-" + project.name
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            name = "RushMaven"
+            url = uri("https://mvn.imabad.dev/repository/maven-releases/")
+            credentials {
+                username = project.findProperty("nexusUsername") ?: System.getenv("NEXUS_USERNAME")
+                password = project.findProperty("nexusPassword") ?: System.getenv("NEXUS_PASSWORD")
+            }
+        }
+    }
+}
+
+publishMods {
+    file = remapJar.archiveFile
+    changelog = rootProject.file("CHANGELOG.md").exists() ? rootProject.file("CHANGELOG.md").text : "Release ${project.version}"
+    type = me.modmuss50.mpp.ReleaseType.valueOf(project.release_type.toString().toUpperCase())
+    modLoaders.add("neoforge")
+    displayName = "Theatrical-${project.name}-${project.version}"
+
+    if (System.getenv("CURSEFORGE_TOKEN") != null) {
+        curseforge {
+            projectId = project.findProperty("curseforge_id") ?: ""
+            accessToken = System.getenv("CURSEFORGE_TOKEN")
+            minecraftVersions.add(project.minecraft_version)
+            requires {
+                slug = "architectury-api"
+            }
+        }
+    }
+    if (System.getenv("MODRINTH_TOKEN") != null) {
+        modrinth {
+            projectId = project.findProperty("modrinth_id") ?: ""
+            accessToken = System.getenv("MODRINTH_TOKEN")
+            minecraftVersions.add(project.minecraft_version)
+            requires {
+                projectId = "lhGA9TYQ"
+            }
+        }
+    }
+    if (System.getenv("GITHUB_TOKEN") != null) {
+        github {
+            repository = "theatricalmod/Theatrical"
+            accessToken = providers.environmentVariable("GITHUB_TOKEN")
+            commitish = System.getenv("GITHUB_REF_NAME") ?: "main"
+        }
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "facing=north": {"model":  "theatrical:block/vertical_pipe", "x": 90},
+    "facing=south": {"model":  "theatrical:block/vertical_pipe", "x": 90},
+    "facing=west": {"model":  "theatrical:block/vertical_pipe", "x":  90, "y":  90},
+    "facing=east": {"model":  "theatrical:block/vertical_pipe", "x":  90, "y":  90},
+    "facing=up": {"model":  "theatrical:block/vertical_pipe"},
+    "facing=down": {"model":  "theatrical:block/vertical_pipe"}
+  }
+}

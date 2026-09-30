@@ -1,0 +1,169 @@
+package dev.imabad.theatrical.client.gui.screen;
+
+import dev.architectury.networking.NetworkManager;
+import dev.imabad.theatrical.Theatrical;
+import dev.imabad.theatrical.TheatricalClient;
+import dev.imabad.theatrical.client.gui.widgets.BetterCheckbox;
+import dev.imabad.theatrical.client.gui.widgets.BetterStringWidget;
+import dev.imabad.theatrical.client.gui.widgets.LabeledEditBox;
+import dev.imabad.theatrical.net.ConfigureConfigurationCard;
+import dev.imabad.theatrical.util.UUIDUtil;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.layouts.FrameLayout;
+import net.minecraft.client.gui.layouts.GridLayout;
+import net.minecraft.client.gui.layouts.LayoutSettings;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public class ConfigurationCardScreen extends Screen {
+    private final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(Theatrical.MOD_ID, "textures/gui/blank.png");
+    protected final int imageWidth;
+    protected final int imageHeight;
+    protected int xCenter;
+    protected int yCenter;
+    protected GridLayout layout;
+    private LabeledEditBox dmxAddress, dmxUniverse;
+    private BetterCheckbox autoIncrement;
+    private BetterCheckbox enableUniverse, enableAddress;
+    private UUID networkId = UUIDUtil.NULL;
+    private final CompoundTag itemData;
+
+    public ConfigurationCardScreen(CompoundTag itemData) {
+        super(Component.translatable("screen.configurationcard"));
+        this.imageWidth = 176;
+        this.imageHeight = 126;
+        this.itemData = itemData;
+        if(itemData.hasUUID("network")) {
+            this.networkId = itemData.getUUID("network");
+        }
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        layout = new GridLayout();
+        layout.defaultCellSetting().alignHorizontallyCenter().padding(10);
+        layout.addChild(new BetterStringWidget(Component.translatable("screen.configurationcard"), this.font).setColor(4210752).setShadow(false), 1, 1, 1, 4);
+
+        this.dmxUniverse = new LabeledEditBox(this.font, xCenter, yCenter, 50, 10, Component.translatable("artneti.dmxUniverse"));
+        if(itemData.contains("dmxUniverse")){
+            this.dmxUniverse.setValue(Integer.toString(itemData.getInt("dmxUniverse")));
+        } else {
+            this.dmxUniverse.setValue("0");
+        }
+        layout.addChild(dmxUniverse, 2, 1, 1, 4, LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyMiddle().padding(10));
+
+        enableUniverse = new BetterCheckbox(xCenter, yCenter, 10, 10, Component.translatable("artneti.dmxUniverse.enable"), itemData.getBoolean("universeEnabled"));
+        dmxUniverse.active = enableUniverse.selected();
+        enableUniverse.setOnChange(aBoolean -> {
+            dmxUniverse.active = aBoolean;
+        });
+        layout.addChild(enableUniverse, 2, 2, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft().alignVerticallyMiddle());
+
+        layout.addChild(CycleButton.<UUID>builder((networkId) -> {
+                    if (TheatricalClient.getArtNetManager().getKnownNetworks().containsKey(networkId)) {
+                        return Component.literal(TheatricalClient.getArtNetManager().getKnownNetworks().get(networkId));
+                    }
+                    return Component.literal("Unknown");
+                })
+                .withValues(CycleButton.ValueListSupplier.create(Stream.concat(Stream.of(UUIDUtil.NULL),
+                        TheatricalClient.getArtNetManager().getKnownNetworks().keySet().stream()).collect(Collectors.toList())))
+                .displayOnlyValue().withInitialValue(networkId)
+                .create(xCenter, yCenter, 150, 20,
+                        Component.translatable("screen.artnetconfig.network"), (obj, val) -> {
+                            this.networkId = val;
+                        }), 3, 1, 1, 4);
+
+        this.dmxAddress = new LabeledEditBox(this.font, xCenter, yCenter, 50, 10, Component.translatable("fixture.dmxStart"));
+        if(itemData.contains("dmxAddress")){
+            this.dmxAddress.setValue(Integer.toString(itemData.getInt("dmxAddress")));
+        }else {
+            this.dmxAddress.setValue("0");
+        }
+        layout.addChild(dmxAddress, 4, 1, 1, 4, LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyMiddle().padding(10));
+
+        enableAddress = new BetterCheckbox(xCenter, yCenter, 10, 10, Component.translatable("artneti.dmxAddress.enable"), itemData.getBoolean("addressEnabled"));
+        dmxAddress.active = enableAddress.selected();
+        enableAddress.setOnChange(aBoolean -> {
+            dmxAddress.active = aBoolean;
+        });
+        layout.addChild(enableAddress, 4, 2, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft().alignVerticallyMiddle());
+
+        this.autoIncrement = new BetterCheckbox(xCenter, yCenter, 150, 20, Component.translatable("screen.configurationcard.autoincrement"), itemData.getBoolean("autoIncrement"));
+
+        layout.addChild(autoIncrement, 5, 1, 1, 4);
+        layout.addChild(
+                Button.builder(Component.translatable("artneti.save"), button -> this.update())
+                        .pos(xCenter, yCenter)
+                        .size(100, 20)
+                        .build(),
+                6, 1, 1, 4
+        );
+        refreshLayout();
+        this.repositionElements();
+    }
+
+    protected void refreshLayout(){
+        if(layout == null)
+            return;
+        layout.arrangeElements();
+        layout.visitWidgets(this::addRenderableWidget);
+    }
+
+    protected void repositionElements() {
+        FrameLayout.centerInRectangle(this.layout, this.getRectangle());
+    }
+
+    protected void update(){
+        try {
+            int dmx = Integer.parseInt(this.dmxAddress.getValue());
+            if (dmx > 512 || dmx < 0) {
+                return;
+            }
+            int universe = Integer.parseInt(this.dmxUniverse.getValue());
+            if (universe < 0) {
+                return;
+            }
+            NetworkManager.sendToServer(new ConfigureConfigurationCard(networkId, dmx, universe, autoIncrement.selected(), enableUniverse.selected(), enableAddress.selected()));
+            Minecraft.getInstance().setScreen(null);
+        } catch(NumberFormatException ignored) {
+            //We need a nicer way to show that this is invalid?
+        }
+    }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        this.renderWindow(guiGraphics);
+    }
+
+    private void renderWindow(GuiGraphics guiGraphics){
+        int layoutHeight = 0;
+        if(layout != null) {
+            layoutHeight = layout.getHeight();
+        }
+        int relX = (this.width - this.imageWidth) / 2;
+        int relY = (this.height - layoutHeight) / 2;
+        guiGraphics.blit(GUI, relX, relY, imageWidth, layoutHeight, 0, 0, this.imageWidth, this.imageHeight, 256,256);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+}

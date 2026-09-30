@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.imabad.theatrical.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "injectors": {
+    "defaultRequire": 1,
+    "maxShiftBy": 5
+  },
+  "mixins": [
+    "ArgumentTypeInfosAccessor",
+    "ClipContextAccessor"
+  ],
+  "client": [
+    "client.ClientMixin",
+    "client.LevelRendererMixin",
+    "client.OptionsScreenMixin"
+  ]
+}

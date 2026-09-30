@@ -1,0 +1,21 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = "Architectury"
+            url = "https://maven.architectury.dev/"
+        }
+        maven {
+            name = "Fabric"
+            url = "https://maven.fabricmc.net/"
+        }
+        maven {
+            name = "NeoForge"
+            url = "https://maven.neoforged.net/releases"
+        }
+        gradlePluginPortal()
+    }
+}
+
+include 'common', 'neoforge'
+
+rootProject.name = "Theatrical Neoforge Port"
